@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" 
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+                xmlns="http://www.w3.org/1999/xhtml">
+
+  <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
+
+  <!-- Главный шаблон -->
+  <xsl:template match="/">
+    <items>
+      <xsl:apply-templates select="//li[@data-id]"/>
+    </items>
+  </xsl:template>
+
+  <!-- Шаблон для обработки элементов li с data-id -->
+  <xsl:template match="li[@data-id]">
+    <xsl:variable name="currentId" select="@data-id"/>
+    <xsl:variable name="author" select="normalize-space(b/span)"/>
+    
+    <!-- Определение родительского элемента -->
+    <xsl:variable name="parentLi" select="ancestor::li[@data-id][1]"/>
+    <xsl:variable name="parentId">
+      <xsl:choose>
+        <xsl:when test="$parentLi">
+          <xsl:value-of select="$parentLi/@data-id"/>
+        </xsl:when>
+        <xsl:otherwise>0</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    
+    <!-- Извлечение сообщения -->
+    <xsl:variable name="message">
+      <xsl:choose>
+        <xsl:when test="b/span/following-sibling::*">
+          <xsl:apply-templates select="b/span/following-sibling::node()"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="normalize-space(.)"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <!-- Создание итогового элемента -->
+    <item id="{$currentId}" 
+          parentid="{$parentId}" 
+          author="{$author}">
+      <xsl:value-of select="normalize-space($message)"/>
+    </item>
+  </xsl:template>
+
+  <!-- Шаблон для обработки текста -->
+  <xsl:template match="text()">
+    <xsl:value-of select="normalize-space(.)"/>
+  </xsl:template>
+
+  <!-- Блокировка обработки вложенных ul/li -->
+  <xsl:template match="ul|li" priority="-1"/>
+
+</xsl:stylesheet>
